@@ -36,7 +36,7 @@ function field_attributes(array $errors, string $key): string
   <div class="site-shell">
     <header class="site-header">
       <a class="brand" href="<?= e(path_url($config, 'index.php')) ?>" aria-label="DezignBank competition registration home">
-        <span class="brand-placeholder" aria-hidden="true">LOGO</span>
+        <span class="brand-placeholder" aria-hidden="true">DB</span>
         <span class="brand-name">DezignBank<span class="brand-dot">.</span></span>
       </a>
       <span class="header-label">Architecture student competition</span>
@@ -141,7 +141,7 @@ function field_attributes(array $errors, string $key): string
                 <span>I agree to the use of my details to manage my registration and send competition-related updates. <span class="required-mark" aria-hidden="true">*</span></span>
               </label>
               <?= field_error($errors, 'consent') ?>
-              <p class="data-notice">Data use: Your name, contact details, college and year of study are collected for registration and competition-related communication. This notice can be edited before launch.</p>
+              <p class="data-notice">Data use: Your name, contact details, college and year of study are collected for registration and competition-related communication.</p>
             </div>
 
             <button class="submit-button" type="submit"><span>Submit registration</span><span class="button-arrow" aria-hidden="true">↗</span></button>

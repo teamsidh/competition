@@ -11,7 +11,7 @@ button{cursor:pointer}
 .site-shell{max-width:1680px;min-height:100vh;margin:auto;padding:0 38px;display:flex;flex-direction:column}
 .site-header{height:88px;display:flex;align-items:center;justify-content:space-between;gap:20px}
 .brand{display:inline-flex;align-items:center;gap:12px;text-decoration:none}
-.brand-placeholder{display:grid;place-items:center;width:37px;height:33px;border:1.5px solid var(--terracotta);color:var(--terracotta);font-size:.43rem;font-weight:800;letter-spacing:.04em}
+.brand-placeholder{display:grid;place-items:center;width:37px;height:33px;border:1.5px solid var(--terracotta);color:var(--terracotta);font-size:.61rem;font-weight:800;letter-spacing:.04em}
 .brand-name{font-size:1.38rem;font-weight:800;letter-spacing:-.065em}
 .brand-dot{color:var(--terracotta)}
 .header-label{font-size:.69rem;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);font-weight:700}
