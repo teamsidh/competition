@@ -10,6 +10,7 @@ header('X-Robots-Tag: noindex, nofollow, noarchive');
 try {
     $pdo = database($config);
     $auth = $pdo->query('SELECT password_hash FROM admin_auth WHERE id = 1 LIMIT 1')->fetch();
+    $adminUsername = admin_username($pdo);
 } catch (Throwable $exception) {
     error_log('Admin database unavailable.');
     http_response_code(503);
@@ -36,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $configuredPassword = (string) ($config['DB_PASSWORD'] ?? '');
                 if ($configuredPassword === '' || !hash_equals($configuredPassword, $hostingPassword)) {
                     admin_record_failure($pdo, $config, 'setup');
-                    $error = 'The hosting database password does not match.';
+                    $error = 'That is not the InfinityFree hosting account password. Open your hosting account details and copy the password shown there; it is different from the InfinityFree dashboard login.';
                 } elseif ($newPassword !== $confirmation) {
                     $error = 'The new passwords do not match.';
                 } elseif (!admin_valid_password($newPassword)) {
@@ -63,14 +64,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Admin is temporarily unavailable. Try again later.';
             }
         }
-    } elseif (!admin_authenticated((string) $auth['password_hash'])) {
+    } elseif (!admin_authenticated((string) $auth['password_hash'], $adminUsername)) {
         try {
             if (admin_too_many_attempts($pdo, $config, 'login')) {
                 $error = 'Three incorrect attempts. Sign-in is blocked for 15 minutes.';
             } else {
                 $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
                 $username = is_string($_POST['username'] ?? null) ? trim($_POST['username']) : '';
-                if (!password_verify($password, (string) $auth['password_hash']) || !hash_equals('admin', $username)) {
+                if (!password_verify($password, (string) $auth['password_hash']) || !hash_equals($adminUsername, $username)) {
                     admin_record_failure($pdo, $config, 'login');
                     $error = admin_too_many_attempts($pdo, $config, 'login')
                         ? 'Three incorrect attempts. Sign-in is blocked for 15 minutes.'
@@ -84,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     admin_clear_failures($pdo, $config, 'login');
                     $pdo->exec('UPDATE admin_auth SET last_login_at = UTC_TIMESTAMP() WHERE id = 1');
-                    admin_complete_login($currentHash);
+                    admin_complete_login($currentHash, $adminUsername);
                     redirect_to($config, 'admin/');
                 }
             }
@@ -96,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$isSignedIn = $mode === 'login' && admin_authenticated((string) $auth['password_hash']);
+$isSignedIn = $mode === 'login' && admin_authenticated((string) $auth['password_hash'], $adminUsername);
 if ($isSignedIn) {
     try {
         $term = admin_search_term($_GET['q'] ?? '');
@@ -169,7 +170,7 @@ $pageTitle = $mode === 'setup' ? 'Set up admin access' : ($isSignedIn ? 'Registr
         <p class="eyebrow">Private workspace</p>
         <h1><?= $mode === 'setup' ? 'Make this yours.' : 'Welcome back.' ?></h1>
         <p><?= $mode === 'setup'
-            ? 'Set an admin password to view competition registrations. This one-time step verifies your existing hosting database password.'
+            ? 'Set an admin password to view competition registrations. This one-time step verifies the password shown in your InfinityFree hosting account details.'
             : 'Sign in to review student registrations and download the data when you need it.' ?></p>
         <div class="auth-aside"><span class="auth-aside-number">01 / 01</span><span>Architecture Student Competition<br>Registration management</span></div>
       </div>
@@ -183,9 +184,9 @@ $pageTitle = $mode === 'setup' ? 'Set up admin access' : ($isSignedIn ? 'Registr
           <?php if ($mode === 'setup'): ?>
             <label>Admin ID</label>
             <div class="readonly-id">admin</div>
-            <label for="hosting_password">Existing hosting database password</label>
+            <label for="hosting_password">InfinityFree hosting account password</label>
             <input id="hosting_password" name="hosting_password" type="password" autocomplete="off" required>
-            <p class="field-note">Find it in your InfinityFree account’s MySQL database details. It is checked once and is never saved here.</p>
+            <p class="field-note">Open <a href="https://dash.infinityfree.com/accounts/if0_43068035" target="_blank" rel="noopener noreferrer">hosting account details</a>, scroll to Account Details → PASSWORD, then copy that value. Do not use your InfinityFree dashboard login or Hostinger mail password. It is checked once and is never saved here.</p>
             <label for="new_password">New admin password</label>
             <input id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="12" maxlength="72" required>
             <label for="confirm_password">Confirm admin password</label>
@@ -194,7 +195,7 @@ $pageTitle = $mode === 'setup' ? 'Set up admin access' : ($isSignedIn ? 'Registr
             <p class="small-note">Use at least 12 characters. The new password is stored only as a salted hash.</p>
           <?php else: ?>
             <label for="username">Admin ID</label>
-            <input id="username" name="username" type="text" autocomplete="username" value="admin" required>
+            <input id="username" name="username" type="text" autocomplete="username" value="<?= e($adminUsername) ?>" required>
             <label for="password">Admin password</label>
             <input id="password" name="password" type="password" autocomplete="current-password" required>
             <button class="primary-button" type="submit">Sign in <span aria-hidden="true">→</span></button>

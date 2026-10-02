@@ -7,7 +7,7 @@ function admin_csrf_valid(array $post): bool
         && hash_equals((string) ($_SESSION['csrf_token'] ?? ''), $post['csrf_token']);
 }
 
-function admin_authenticated(?string $passwordHash = null): bool
+function admin_authenticated(?string $passwordHash = null, ?string $username = null): bool
 {
     $lastActivity = $_SESSION['admin_last_activity'] ?? 0;
     if (($_SESSION['admin_authenticated'] ?? false) !== true || !is_int($lastActivity)) {
@@ -17,10 +17,11 @@ function admin_authenticated(?string $passwordHash = null): bool
         unset($_SESSION['admin_authenticated'], $_SESSION['admin_last_activity'], $_SESSION['admin_auth_tag']);
         return false;
     }
-    if ($passwordHash !== null && !hash_equals(
-        hash('sha256', $passwordHash),
-        (string) ($_SESSION['admin_auth_tag'] ?? '')
-    )) {
+    $tag = (string) ($_SESSION['admin_auth_tag'] ?? '');
+    $validTag = $passwordHash === null
+        || hash_equals(hash('sha256', $passwordHash . ':' . ($username ?? 'admin')), $tag)
+        || ($username === 'admin' && hash_equals(hash('sha256', $passwordHash), $tag));
+    if (!$validTag) {
         unset($_SESSION['admin_authenticated'], $_SESSION['admin_last_activity'], $_SESSION['admin_auth_tag']);
         return false;
     }
@@ -34,18 +35,29 @@ function admin_require_auth(array $config, PDO $pdo): void
         redirect_to($config, 'admin/');
     }
     $hash = $pdo->query('SELECT password_hash FROM admin_auth WHERE id = 1 LIMIT 1')->fetchColumn();
-    if ($hash === false || !admin_authenticated((string) $hash)) {
+    if ($hash === false || !admin_authenticated((string) $hash, admin_username($pdo))) {
         redirect_to($config, 'admin/');
     }
 }
 
-function admin_complete_login(string $passwordHash): void
+function admin_complete_login(string $passwordHash, string $username = 'admin'): void
 {
     session_regenerate_id(true);
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     $_SESSION['admin_authenticated'] = true;
     $_SESSION['admin_last_activity'] = time();
-    $_SESSION['admin_auth_tag'] = hash('sha256', $passwordHash);
+    $_SESSION['admin_auth_tag'] = hash('sha256', $passwordHash . ':' . $username);
+}
+
+function admin_username(PDO $pdo): string
+{
+    $value = $pdo->query('SELECT username FROM admin_identity WHERE id = 1 LIMIT 1')->fetchColumn();
+    return is_string($value) && $value !== '' ? $value : 'admin';
+}
+
+function admin_valid_username(string $username): bool
+{
+    return preg_match('/^[A-Za-z][A-Za-z0-9._-]{2,31}$/D', $username) === 1;
 }
 
 function admin_attempt_key(array $config): string

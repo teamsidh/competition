@@ -10,6 +10,7 @@ header('X-Robots-Tag: noindex, nofollow, noarchive');
 try {
     $pdo = database($config);
     $accountExists = $pdo->query('SELECT 1 FROM admin_auth WHERE id = 1 LIMIT 1')->fetchColumn() !== false;
+    $adminUsername = admin_username($pdo);
     $mailReady = admin_mail_password($pdo, $config) !== null;
 } catch (Throwable $exception) {
     error_log('Admin recovery unavailable.');
@@ -28,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (($_POST['action'] ?? '') === 'send') {
         try {
             $username = is_string($_POST['username'] ?? null) ? trim($_POST['username']) : '';
-            if (!hash_equals('admin', $username)) {
+            if (!hash_equals($adminUsername, $username)) {
                 $error = 'Check the admin ID and try again.';
             } elseif (admin_too_many_attempts($pdo, $config, 'otp_send', 3, 3600)) {
                 $error = 'Too many codes requested. Try again in one hour.';
@@ -145,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="eyebrow">Step 01</p><h2 id="send-title">Get a code</h2>
         <form method="post" action="<?= e(path_url($config, 'admin/forgot.php')) ?>">
           <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>"><input type="hidden" name="action" value="send">
-          <label for="username">Admin ID</label><input id="username" name="username" type="text" value="admin" autocomplete="username" required>
+          <label for="username">Admin ID</label><input id="username" name="username" type="text" value="<?= e($adminUsername) ?>" autocomplete="username" required>
           <button class="primary-button" type="submit"<?= $mailReady ? '' : ' disabled' ?>>Send 8-digit code <span aria-hidden="true">→</span></button>
         </form>
       </section>

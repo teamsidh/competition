@@ -11,6 +11,7 @@ try {
     $pdo = database($config);
     admin_require_auth($config, $pdo);
     $authHash = (string) $pdo->query('SELECT password_hash FROM admin_auth WHERE id = 1')->fetchColumn();
+    $adminUsername = admin_username($pdo);
     $mailReady = admin_mail_password($pdo, $config) !== null;
 } catch (Throwable $exception) {
     error_log('Admin settings unavailable.');
@@ -51,8 +52,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $query = $pdo->prepare('UPDATE admin_auth SET password_hash = ? WHERE id = 1');
                         $query->execute([$newHash]);
                         admin_clear_failures($pdo, $config, 'settings');
-                        admin_complete_login($newHash);
+                        admin_complete_login($newHash, $adminUsername);
                         $_SESSION['admin_settings_notice'] = 'Admin password changed. Other sessions have been signed out.';
+                        redirect_to($config, 'admin/settings.php');
+                    }
+                } elseif (($_POST['action'] ?? '') === 'username') {
+                    $newUsername = is_string($_POST['new_username'] ?? null) ? trim($_POST['new_username']) : '';
+                    if (!admin_valid_username($newUsername)) {
+                        $error = 'Use 3–32 characters. Start with a letter; then use letters, numbers, dots, underscores, or hyphens.';
+                    } elseif (hash_equals($adminUsername, $newUsername)) {
+                        $error = 'Choose a different admin ID.';
+                    } else {
+                        $change = $pdo->prepare(
+                            'INSERT INTO admin_identity (id, username) VALUES (1, ?)
+                             ON DUPLICATE KEY UPDATE username = VALUES(username)'
+                        );
+                        $change->execute([$newUsername]);
+                        admin_clear_failures($pdo, $config, 'settings');
+                        admin_complete_login($authHash, $newUsername);
+                        $_SESSION['admin_settings_notice'] = 'Admin ID changed. Other sessions have been signed out.';
                         redirect_to($config, 'admin/settings.php');
                     }
                 } elseif (($_POST['action'] ?? '') === 'mail') {
@@ -103,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div></header>
   <main class="settings-shell" id="main">
     <p class="eyebrow">Private workspace</p><h1>Account settings<span class="heading-dot">.</span></h1>
-    <p class="settings-intro">Admin ID: <strong>admin</strong>. Keep the admin password separate from your hosting and email passwords.</p>
+    <p class="settings-intro">Admin ID: <strong><?= e($adminUsername) ?></strong>. Keep the admin password separate from your hosting and email passwords.</p>
     <?php if ($error !== ''): ?><p class="alert" role="alert"><?= e($error) ?></p><?php endif; ?>
     <?php if ($notice !== ''): ?><p class="success" role="status"><?= e($notice) ?></p><?php endif; ?>
     <div class="settings-grid">
@@ -116,6 +134,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <label for="new-password">New admin password</label><input id="new-password" name="new_password" type="password" autocomplete="new-password" minlength="12" maxlength="72" required>
           <label for="confirm-password">Confirm new password</label><input id="confirm-password" name="confirm_password" type="password" autocomplete="new-password" minlength="12" maxlength="72" required>
           <button class="primary-button" type="submit">Save new password <span aria-hidden="true">→</span></button>
+        </form>
+      </section>
+      <section class="settings-card" aria-labelledby="username-title">
+        <p class="eyebrow">Identity</p><h2 id="username-title">Change admin ID</h2>
+        <p>Use a name you will remember. Your other admin sessions will end.</p>
+        <form method="post" action="<?= e(path_url($config, 'admin/settings.php')) ?>">
+          <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>"><input type="hidden" name="action" value="username">
+          <label for="username-current">Current admin password</label><input id="username-current" name="current_password" type="password" autocomplete="current-password" required>
+          <label for="new-username">New admin ID</label><input id="new-username" name="new_username" type="text" autocomplete="off" minlength="3" maxlength="32" pattern="[A-Za-z][A-Za-z0-9._-]{2,31}" required>
+          <button class="primary-button" type="submit">Save new ID <span aria-hidden="true">→</span></button>
         </form>
       </section>
       <section class="settings-card" aria-labelledby="mail-title">
