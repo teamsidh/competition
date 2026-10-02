@@ -2,7 +2,7 @@
 
 A standalone PHP 8 registration flow for the **registration phase only**. It includes a responsive form, server-side validation, MySQL storage, and a printable confirmation. It does not include logins, payments, uploads, teams, judging, or an admin panel.
 
-The visual theme uses the current terracotta color published by `dezignbank.net` (`#A65A3A`) and an original decorative illustration of historic architectural arches. The small `LOGO` square in the header is a **replaceable placeholder**, not an official logo. Replace it with an approved logo before launch if one is available.
+The visual theme uses the current terracotta color published by `dezignbank.net` (`#A65A3A`) and an original decorative illustration of historic architectural arches. The small `DB` monogram in the header is a temporary brand mark, not an official logo.
 
 ## Folder structure
 
@@ -36,13 +36,15 @@ The visual theme uses the current terracotta color published by `dezignbank.net`
 4. Serve `app` as the document root with `php -S localhost:8000 -t app` and open `http://localhost:8000/`. The PHP development server does not apply `.htaccess`; use Apache for access-control checks.
 5. To use an Apache subdirectory such as `http://localhost/competition/`, put the contents of `app` in that directory and set `APP_URL` to `http://localhost`, `BASE_PATH` to `/competition`.
 
-`REGISTRATION_OPEN` in `config.php` controls whether the form accepts registrations. Set it to `false` to show the closed state and reject POSTs. Edit the data-use notice in `app/index.php` before launch to match your final policy. No marketing consent is included.
+`REGISTRATION_OPEN` in `config.php` controls whether the form accepts registrations. Set it to `false` to show the closed state and reject POSTs. Review the data-use notice in `app/index.php` against your final privacy policy. No marketing consent is included.
 
 ## GitHub
 
 `app/private/config.php` is ignored by Git. Review `git status` before committing; do not add actual database credentials, exports, backups, or logs. Push the source repository to the GitHub owner and repository you control. The production `config.php` is created on the host after upload.
 
 ## InfinityFree deployment
+
+The live site is [dezignbank-competition.infinityfreeapp.com](https://dezignbank-competition.infinityfreeapp.com/), hosted in InfinityFree account `if0_43068035`. The production configuration is stored only in `/htdocs/private/config.php` on the host and is not in this repository. A live registration and database insert were verified on 2 October 2026; the synthetic test row was then deleted.
 
 1. In the InfinityFree control panel, create a **new MySQL database** for this registration flow. Keep it separate from any DezignBank platform database. Copy the exact database hostname, database name, username, and password from the control panel. The hostname is usually an InfinityFree SQL host, **not** `localhost`.
 2. Open phpMyAdmin for that database and import `schema.sql`. Confirm the `registrations` table and its two unique indexes exist.
