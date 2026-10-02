@@ -2,7 +2,7 @@
 
 A standalone PHP 8 registration flow for the **registration phase only**. It includes a responsive form, server-side validation, MySQL storage, and a printable confirmation. It does not include logins, payments, uploads, teams, judging, or an admin panel.
 
-The visual theme uses the current terracotta color published by `dezignbank.net` (`#A65A3A`) and an original decorative illustration of historic architectural arches. The small `DB` monogram in the header is a temporary brand mark, not an official logo.
+The visual theme follows the live `dezignbank.net` brand: white surfaces, restrained terracotta (`#A65A3A`), Inter Tight/Plus Jakarta Sans typography, and the site's published logo mark. The heritage photograph shows Adalaj Stepwell in Gujarat. Photo: [Shivajidesai29 on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Adalaj_Stepwell-Adalaj_Ahmedabad-Gujarat-IMG_1021.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); cropped for the registration layout.
 
 ## Folder structure
 
@@ -19,6 +19,8 @@ The visual theme uses the current terracotta color published by `dezignbank.net`
     ├── assets/
     │   ├── style.css
     │   ├── form.js
+    │   ├── dezignbank-mark.svg
+    │   ├── adalaj-stepwell.jpg
     │   └── heritage-architecture.svg
     └── private/
         ├── .htaccess          # Denies direct web access
@@ -58,7 +60,9 @@ The desired `dezignbank.com/competition` URL in the brief requires compatible ro
 
 ## Viewing, exporting, and backing up registrations
 
-Use InfinityFree's phpMyAdmin for the competition database. Select `registrations` and use **Browse** to view records. Use **Export** to download a CSV or SQL backup; store exports securely because they contain student contact details. Use **Export → SQL** for a full database backup before changing the schema. There is deliberately no public list or custom export endpoint.
+Sign in to the DezignBank InfinityFree account and open [MySQL Databases for the competition site](https://dash.infinityfree.com/accounts/if0_43068035/domains/dezignbank-competition.infinityfreeapp.com/databases). In the row for `if0_43068035_competition`, click **phpMyAdmin**. Click the `registrations` table, then **Browse** to view form submissions. New records appear here as soon as a registration succeeds. The table currently starts empty because the live synthetic test entry was removed.
+
+For a download, open the `registrations` table and click **Export**. Choose CSV for a spreadsheet or SQL for a database backup, then click **Go**. Store exports securely because they contain student contact details. There is deliberately no public list or unprotected export endpoint. The owner uses the existing InfinityFree login, so no new admin password is required.
 
 ## How the flow works
 

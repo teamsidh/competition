@@ -26,8 +26,11 @@ function field_attributes(array $errors, string $key): string
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#A65A3A">
   <meta name="description" content="Register for the DezignBank Architecture Student Competition.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="canonical" href="<?= e(canonical_url($config, 'index.php')) ?>">
-  <link rel="stylesheet" href="<?= e(path_url($config, 'assets/style.css')) ?>">
+  <link rel="stylesheet" href="<?= e(path_url($config, 'assets/style.css')) ?>?v=20261002-redesign">
   <script src="<?= e(path_url($config, 'assets/form.js')) ?>" defer></script>
   <title>Architecture Student Competition — Registration | DezignBank</title>
 </head>
@@ -36,33 +39,30 @@ function field_attributes(array $errors, string $key): string
   <div class="site-shell">
     <header class="site-header">
       <a class="brand" href="<?= e(path_url($config, 'index.php')) ?>" aria-label="DezignBank competition registration home">
-        <span class="brand-placeholder" aria-hidden="true">DB</span>
-        <span class="brand-name">DezignBank<span class="brand-dot">.</span></span>
+        <img class="brand-mark" src="<?= e(path_url($config, 'assets/dezignbank-mark.svg')) ?>" alt="" width="31" height="31">
+        <span class="brand-name">DezignBank</span>
       </a>
-      <span class="header-label">Architecture student competition</span>
+      <span class="header-label">Architecture Student Competition</span>
     </header>
 
     <main class="main-grid" id="registration">
       <section class="story-panel" aria-labelledby="story-title">
-        <div class="story-topline"><span>DEZIGNBANK / COMPETITION</span><span class="topline-rule"></span><span>01</span></div>
         <div class="story-copy">
-          <p class="eyebrow">A space for the next generation</p>
-          <h1 id="story-title">Design begins with <em>looking back.</em></h1>
-          <p>Architecture carries ideas across generations. Bring your point of view to the DezignBank Architecture Student Competition.</p>
+          <p class="eyebrow">DezignBank / Student competition</p>
+          <h1 id="story-title">Architecture Student Competition <span>— Registration</span></h1>
+          <p>Register with your contact and college details. We’ll use them to manage your registration and send competition-related updates.</p>
         </div>
-        <div class="heritage-art">
-          <img src="<?= e(path_url($config, 'assets/heritage-architecture.svg')) ?>" alt="" width="900" height="690">
-          <span class="art-caption">A study of historic arches and proportion</span>
-        </div>
-        <div class="story-bottom"><span>HERITAGE</span><span class="story-line"></span><span>IMAGINATION</span><span class="story-line"></span><span>FUTURE</span></div>
+        <figure class="heritage-art">
+          <img src="<?= e(path_url($config, 'assets/adalaj-stepwell.jpg')) ?>" alt="Carved stone columns and galleries at Adalaj Stepwell in Gujarat" width="960" height="1158">
+          <figcaption>Adalaj Stepwell, Gujarat · Photograph by <a href="https://commons.wikimedia.org/wiki/File:Adalaj_Stepwell-Adalaj_Ahmedabad-Gujarat-IMG_1021.jpg" rel="noopener noreferrer" target="_blank">Shivajidesai29</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener noreferrer" target="_blank">CC BY-SA 4.0</a>. Cropped for this layout.</figcaption>
+        </figure>
       </section>
 
       <section class="form-panel" aria-labelledby="form-title">
-        <div class="form-topline"><span>STUDENT REGISTRATION</span><span class="form-index">DB / 01</span></div>
         <div class="form-intro">
-          <p class="eyebrow">Your first step</p>
-          <h2 id="form-title">Architecture Student Competition <span>— Registration</span></h2>
-          <p>Tell us a little about yourself and your college. Fields marked <span class="required-mark">*</span> are required.</p>
+          <p class="eyebrow">Registration form</p>
+          <h2 id="form-title">Your details</h2>
+          <p>Fields marked <span class="required-mark">*</span> are required.</p>
         </div>
 
         <?php if (!$isOpen): ?>
@@ -92,7 +92,7 @@ function field_attributes(array $errors, string $key): string
               <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
             </div>
 
-            <div class="form-section-title"><span>01</span><h3>Personal details</h3></div>
+            <div class="form-section-title"><h3>Personal details</h3></div>
             <div class="field-grid">
               <div class="field field-full">
                 <label for="full_name">Full name <span class="required-mark" aria-hidden="true">*</span></label>
@@ -111,7 +111,7 @@ function field_attributes(array $errors, string $key): string
               </div>
             </div>
 
-            <div class="form-section-title second"><span>02</span><h3>Academic details</h3></div>
+            <div class="form-section-title second"><h3>Academic details</h3></div>
             <div class="field-grid">
               <div class="field field-full">
                 <label for="college_name">College / institution name <span class="required-mark" aria-hidden="true">*</span></label>
