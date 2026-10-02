@@ -1,0 +1,7 @@
+Options -Indexes
+DirectoryIndex index.php
+RewriteEngine On
+RewriteRule (^|/)(private|\.git|\.svn)(/|$) - [F,NC]
+<FilesMatch "(?i)(^\.|\.(sql|log|bak|backup|ini|env|zip|gz)$)">
+    Require all denied
+</FilesMatch>

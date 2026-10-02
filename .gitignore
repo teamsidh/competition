@@ -1,0 +1,8 @@
+/app/private/config.php
+/.env
+*.log
+*.sql.gz
+*.bak
+*.backup
+.DS_Store
+Thumbs.db
