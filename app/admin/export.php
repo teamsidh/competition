@@ -6,7 +6,14 @@ require dirname(__DIR__) . '/private/database.php';
 require dirname(__DIR__) . '/private/admin_functions.php';
 
 header('X-Robots-Tag: noindex, nofollow, noarchive');
-admin_require_auth($config);
+try {
+    $pdo = database($config);
+    admin_require_auth($config, $pdo);
+} catch (Throwable $exception) {
+    error_log('Admin export unavailable.');
+    http_response_code(503);
+    exit('Export is temporarily unavailable.');
+}
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !admin_csrf_valid($_POST)) {
     http_response_code(405);
     exit('Export request rejected.');
@@ -15,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !admin_csrf_valid($_POST)) {
 $term = admin_search_term($_POST['q'] ?? '');
 [$where, $params] = admin_search_filter($term);
 try {
-    $pdo = database($config);
     $query = $pdo->prepare(
         'SELECT reference, full_name, email_normalized, mobile_e164, college_name, college_city,
                 year_of_study, consented_at, created_at FROM registrations' . $where .

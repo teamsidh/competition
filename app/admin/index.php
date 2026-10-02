@@ -18,6 +18,8 @@ try {
 
 $mode = $auth === false ? 'setup' : 'login';
 $error = '';
+$notice = (string) ($_SESSION['admin_login_notice'] ?? '');
+unset($_SESSION['admin_login_notice']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!admin_csrf_valid($_POST)) {
@@ -37,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'The hosting database password does not match.';
                 } elseif ($newPassword !== $confirmation) {
                     $error = 'The new passwords do not match.';
-                } elseif (!preg_match('//u', $newPassword) || character_count($newPassword) < 12 || strlen($newPassword) > 72) {
+                } elseif (!admin_valid_password($newPassword)) {
                     $error = 'Use an admin password of at least 12 characters and at most 72 bytes.';
                 } elseif (hash_equals($configuredPassword, $newPassword)) {
                     $error = 'Choose an admin password different from the hosting password.';
@@ -48,10 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
                     $insert->execute([$hash]);
                     admin_clear_failures($pdo, $config, 'setup');
-                    session_regenerate_id(true);
-                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                    $_SESSION['admin_authenticated'] = true;
-                    $_SESSION['admin_last_activity'] = time();
+                    admin_complete_login($hash);
                     redirect_to($config, 'admin/');
                 }
             }
@@ -64,26 +63,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Admin is temporarily unavailable. Try again later.';
             }
         }
-    } elseif (!admin_authenticated()) {
+    } elseif (!admin_authenticated((string) $auth['password_hash'])) {
         try {
             if (admin_too_many_attempts($pdo, $config, 'login')) {
-                $error = 'Too many attempts. Try again in 15 minutes.';
+                $error = 'Three incorrect attempts. Sign-in is blocked for 15 minutes.';
             } else {
                 $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
-                if (!password_verify($password, (string) $auth['password_hash'])) {
+                $username = is_string($_POST['username'] ?? null) ? trim($_POST['username']) : '';
+                if (!password_verify($password, (string) $auth['password_hash']) || !hash_equals('admin', $username)) {
                     admin_record_failure($pdo, $config, 'login');
-                    $error = 'Incorrect password.';
+                    $error = admin_too_many_attempts($pdo, $config, 'login')
+                        ? 'Three incorrect attempts. Sign-in is blocked for 15 minutes.'
+                        : 'Incorrect admin ID or password.';
                 } else {
-                    if (password_needs_rehash((string) $auth['password_hash'], PASSWORD_DEFAULT)) {
+                    $currentHash = (string) $auth['password_hash'];
+                    if (password_needs_rehash($currentHash, PASSWORD_DEFAULT)) {
+                        $currentHash = password_hash($password, PASSWORD_DEFAULT);
                         $updateHash = $pdo->prepare('UPDATE admin_auth SET password_hash = ? WHERE id = 1');
-                        $updateHash->execute([password_hash($password, PASSWORD_DEFAULT)]);
+                        $updateHash->execute([$currentHash]);
                     }
                     admin_clear_failures($pdo, $config, 'login');
                     $pdo->exec('UPDATE admin_auth SET last_login_at = UTC_TIMESTAMP() WHERE id = 1');
-                    session_regenerate_id(true);
-                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                    $_SESSION['admin_authenticated'] = true;
-                    $_SESSION['admin_last_activity'] = time();
+                    admin_complete_login($currentHash);
                     redirect_to($config, 'admin/');
                 }
             }
@@ -95,7 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-if ($mode === 'login' && admin_authenticated()) {
+$isSignedIn = $mode === 'login' && admin_authenticated((string) $auth['password_hash']);
+if ($isSignedIn) {
     try {
         $term = admin_search_term($_GET['q'] ?? '');
         [$where, $params] = admin_search_filter($term);
@@ -128,7 +130,7 @@ if ($mode === 'login' && admin_authenticated()) {
     }
 }
 
-$pageTitle = $mode === 'setup' ? 'Set up admin access' : (admin_authenticated() ? 'Registrations' : 'Admin sign in');
+$pageTitle = $mode === 'setup' ? 'Set up admin access' : ($isSignedIn ? 'Registrations' : 'Admin sign in');
 ?>
 <!doctype html>
 <html lang="en">
@@ -137,7 +139,7 @@ $pageTitle = $mode === 'setup' ? 'Set up admin access' : (admin_authenticated() 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#A65A3A">
-  <link rel="stylesheet" href="<?= e(path_url($config, 'assets/admin.css')) ?>?v=20261002">
+  <link rel="stylesheet" href="<?= e(path_url($config, 'assets/admin.css')) ?>?v=20261002b">
   <title><?= e($pageTitle) ?> | DezignBank Admin</title>
 </head>
 <body>
@@ -150,7 +152,8 @@ $pageTitle = $mode === 'setup' ? 'Set up admin access' : (admin_authenticated() 
       </a>
       <div class="topbar-right">
         <span class="workspace-label">Competition / Admin</span>
-        <?php if ($mode === 'login' && admin_authenticated()): ?>
+        <?php if ($isSignedIn): ?>
+          <a class="settings-link" href="<?= e(path_url($config, 'admin/settings.php')) ?>">Settings</a>
           <form method="post" action="<?= e(path_url($config, 'admin/logout.php')) ?>">
             <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
             <button class="logout" type="submit">Sign out</button>
@@ -160,7 +163,7 @@ $pageTitle = $mode === 'setup' ? 'Set up admin access' : (admin_authenticated() 
     </div>
   </header>
 
-  <?php if ($mode !== 'login' || !admin_authenticated()): ?>
+  <?php if (!$isSignedIn): ?>
     <main class="auth-shell" id="main">
       <div class="auth-intro">
         <p class="eyebrow">Private workspace</p>
@@ -174,9 +177,12 @@ $pageTitle = $mode === 'setup' ? 'Set up admin access' : (admin_authenticated() 
         <p class="eyebrow">DezignBank admin</p>
         <h2 id="form-heading"><?= $mode === 'setup' ? 'Create admin access' : 'Sign in' ?></h2>
         <?php if ($error !== ''): ?><p class="alert" role="alert"><?= e($error) ?></p><?php endif; ?>
+        <?php if ($notice !== ''): ?><p class="success" role="status"><?= e($notice) ?></p><?php endif; ?>
         <form method="post" action="<?= e(path_url($config, 'admin/')) ?>" autocomplete="on">
           <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
           <?php if ($mode === 'setup'): ?>
+            <label>Admin ID</label>
+            <div class="readonly-id">admin</div>
             <label for="hosting_password">Existing hosting database password</label>
             <input id="hosting_password" name="hosting_password" type="password" autocomplete="off" required>
             <p class="field-note">Find it in your InfinityFree account’s MySQL database details. It is checked once and is never saved here.</p>
@@ -187,10 +193,13 @@ $pageTitle = $mode === 'setup' ? 'Set up admin access' : (admin_authenticated() 
             <button class="primary-button" type="submit">Create access <span aria-hidden="true">→</span></button>
             <p class="small-note">Use at least 12 characters. The new password is stored only as a salted hash.</p>
           <?php else: ?>
+            <label for="username">Admin ID</label>
+            <input id="username" name="username" type="text" autocomplete="username" value="admin" required>
             <label for="password">Admin password</label>
             <input id="password" name="password" type="password" autocomplete="current-password" required>
             <button class="primary-button" type="submit">Sign in <span aria-hidden="true">→</span></button>
-            <p class="small-note">Five failed attempts from one address pause sign-in for 15 minutes.</p>
+            <p class="small-note">Three incorrect attempts from one address block sign-in for 15 minutes.</p>
+            <a class="forgot-link" href="<?= e(path_url($config, 'admin/forgot.php')) ?>">Forgot password?</a>
           <?php endif; ?>
         </form>
       </section>

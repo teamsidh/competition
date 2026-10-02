@@ -11,13 +11,13 @@ The visual theme follows the live `dezignbank.net` brand: white surfaces, restra
 ├── .gitignore
 ├── README.md
 ├── schema.sql                 # Fresh database setup; do not upload publicly
-├── admin-migration.sql        # Add admin tables to an existing deployment
+├── admin-migration.sql        # Add admin and recovery tables to an existing deployment
 └── app/                       # Upload the contents of this folder to the site directory
     ├── .htaccess              # Blocks private files and directory listings
     ├── index.php              # Registration page
     ├── register.php           # POST handler
     ├── confirmation.php       # Session-only printable confirmation
-    ├── admin/                 # Private owner dashboard and CSV export
+    ├── admin/                 # Private owner dashboard, settings, email recovery, CSV export
     ├── assets/
     │   ├── style.css
     │   ├── admin.css
@@ -31,6 +31,8 @@ The visual theme follows the live `dezignbank.net` brand: white surfaces, restra
         ├── functions.php
         ├── database.php
         ├── admin_functions.php
+        ├── mail.php           # Hostinger SMTP via PHPMailer
+        ├── vendor/phpmailer/  # PHPMailer 7.1.1 and its license
         └── config.example.php # Copy to config.php; never commit it
 ```
 
@@ -50,7 +52,7 @@ The visual theme follows the live `dezignbank.net` brand: white surfaces, restra
 
 ## InfinityFree deployment
 
-The live site is [dezignbank-competition.infinityfreeapp.com](https://dezignbank-competition.infinityfreeapp.com/), hosted in InfinityFree account `if0_43068035`. The production configuration is stored only in `/htdocs/private/config.php` on the host and is not in this repository. A live registration and database insert were verified on 2 October 2026; the synthetic test row was then deleted. For an existing installation, import `admin-migration.sql` in phpMyAdmin to add the two admin tables without changing registrations.
+The live site is [dezignbank-competition.infinityfreeapp.com](https://dezignbank-competition.infinityfreeapp.com/), hosted in InfinityFree account `if0_43068035`. The production configuration is stored only in `/htdocs/private/config.php` on the host and is not in this repository. A live registration and database insert were verified on 2 October 2026; the synthetic test row was then deleted. For an existing installation, import `admin-migration.sql` in phpMyAdmin to add the admin and recovery tables without changing registrations.
 
 1. In the InfinityFree control panel, create a **new MySQL database** for this registration flow. Keep it separate from any DezignBank platform database. Copy the exact database hostname, database name, username, and password from the control panel. The hostname is usually an InfinityFree SQL host, **not** `localhost`.
 2. Open phpMyAdmin for that database and import `schema.sql`. Confirm the `registrations` table and its two unique indexes exist.
@@ -64,11 +66,11 @@ The desired `dezignbank.com/competition` URL in the brief requires compatible ro
 
 ## Admin dashboard
 
-Open [the private admin section](https://dezignbank-competition.infinityfreeapp.com/admin/). On the first visit, enter the existing InfinityFree MySQL database password shown in the hosting account and choose a separate admin password of at least 12 characters. Enter both directly on the HTTPS site; do not send either password in chat or commit one to Git. The existing password is checked once against the host-only configuration. Only a salted hash of the new admin password is saved in `admin_auth`. Setup closes automatically after the first owner account is created.
+Open [the private admin section](https://dezignbank-competition.infinityfreeapp.com/admin/). The admin ID is `admin`. On the first visit, enter the existing InfinityFree MySQL database password shown in the hosting account and choose a separate admin password of at least 12 characters. Enter both directly on the HTTPS site; do not commit either password to Git. The existing password is checked once against the host-only configuration. Only a salted hash of the admin password is saved in `admin_auth`. Setup closes automatically after the first owner account is created.
 
-Sign in with that admin password to view totals, search submissions, page through results, and download all or matching entries as CSV. The table shows each student's reference, received time, name, email, mobile, college, city, and year. CSV also includes consent time. Dashboard and export share a separate, private admin session that expires after 30 minutes of inactivity. Login and setup have a per-IP limit of five failed attempts in 15 minutes; export uses POST and CSRF validation. CSV cells are guarded against spreadsheet formula injection. Sign out when finished, and keep downloaded contact data private.
+Sign in with that admin ID and password to view totals, search submissions, page through results, and download all or matching entries as CSV. The table shows each student's reference, received time, name, email, mobile, college, city, and year. CSV also includes consent time. Dashboard and export share a separate, private admin session that expires after 30 minutes of inactivity. Three wrong password attempts from one IP block sign-in for 15 minutes. Export uses POST and CSRF validation. CSV cells are guarded against spreadsheet formula injection. Sign out when finished, and keep downloaded contact data private.
 
-If the admin password is lost, recovery requires access to the hosting account and a manual reset of the `admin_auth` row in phpMyAdmin. There is no email reset flow. The database password is not the day-to-day admin password.
+Use **Change password** in admin settings to replace a temporary password. To enable **Forgot password**, connect the `info@dezignbank.com` Hostinger mailbox from the same settings page by entering its mailbox password directly on the HTTPS site. The app sends a test message to that mailbox before saving the password encrypted with AES-256-GCM. The encryption key is derived from the host-only database password; the mailbox password is never put in Git. If the database password changes, reconnect the mailbox. Recovery then sends an eight-digit one-time code to `info@dezignbank.com` through Hostinger SMTP (`smtp.hostinger.com`, port 587, STARTTLS). Codes expire after 10 minutes, allow three incorrect entries, and are stored only as keyed hashes. Send requests are rate-limited. If the mailbox is not connected or SMTP fails, recovery clearly reports that and does not pretend an email was delivered. Manual reset of `admin_auth` in phpMyAdmin remains a fallback for the hosting owner.
 
 ## Database backup and fallback access
 
