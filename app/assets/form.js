@@ -7,6 +7,33 @@
   if (printButton) printButton.addEventListener('click', () => window.print());
   if (!form) return;
 
+  const teamFields = document.querySelector('#team-fields');
+  const memberList = document.querySelector('#team-members');
+  const addMember = document.querySelector('#add-member');
+  let memberSequence = memberList ? memberList.querySelectorAll('input').length : 0;
+  function syncTeamFields() {
+    if (!teamFields) return;
+    const isTeam = form.querySelector('input[name="entry_type"]:checked')?.value === 'team';
+    teamFields.hidden = !isTeam;
+    teamFields.querySelectorAll('input').forEach((input) => {
+      input.disabled = !isTeam;
+      input.required = isTeam;
+    });
+  }
+  form.querySelectorAll('input[name="entry_type"]').forEach((input) => input.addEventListener('change', syncTeamFields));
+  syncTeamFields();
+  addMember?.addEventListener('click', () => {
+    const index = memberSequence++;
+    const row = document.createElement('div');
+    row.className = 'field member-field';
+    row.innerHTML = `<label for="team-member-${index}">Teammate name</label><div class="member-input"><input id="team-member-${index}" name="team_members[]" type="text" minlength="2" maxlength="120" placeholder="Full name" required><button type="button" class="remove-member" aria-label="Remove teammate">Remove</button></div>`;
+    memberList.appendChild(row);
+    row.querySelector('input').focus();
+  });
+  memberList?.addEventListener('click', (event) => {
+    if (event.target.closest('.remove-member')) event.target.closest('.member-field').remove();
+  });
+
   const messages = {
     full_name: 'Enter your full name.',
     email: 'Enter a valid email address.',
@@ -67,7 +94,12 @@
   });
 
   form.addEventListener('submit', (event) => {
-    const invalid = fields.filter((field) => !validateField(field));
+    if (form.querySelector('input[name="entry_type"]:checked')?.value === 'team' && !memberList.querySelector('input:not(:disabled)')) {
+      event.preventDefault();
+      addMember.click();
+      return;
+    }
+    const invalid = [...form.querySelectorAll('input[required]:not(:disabled), select[required]')].filter((field) => !validateField(field));
     if (invalid.length) {
       event.preventDefault();
       invalid[0].focus();

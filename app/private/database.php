@@ -18,8 +18,8 @@ function save_registration(PDO $pdo, array $values): array
 {
     $insert = $pdo->prepare(
         'INSERT INTO registrations
-         (reference, full_name, email_normalized, mobile_e164, college_name, college_city, year_of_study, consented_at, created_at)
-         VALUES (:reference, :full_name, :email, :mobile, :college_name, :college_city, :year_of_study, UTC_TIMESTAMP(), UTC_TIMESTAMP())'
+         (reference, entry_type, team_members_json, full_name, email_normalized, mobile_e164, college_name, college_city, year_of_study, consented_at, created_at)
+         VALUES (:reference, :entry_type, :team_members_json, :full_name, :email, :mobile, :college_name, :college_city, :year_of_study, UTC_TIMESTAMP(), UTC_TIMESTAMP())'
     );
     $emailExists = $pdo->prepare('SELECT 1 FROM registrations WHERE email_normalized = ? LIMIT 1');
 
@@ -28,6 +28,8 @@ function save_registration(PDO $pdo, array $values): array
         try {
             $insert->execute([
                 'reference' => $reference,
+                'entry_type' => $values['entry_type'],
+                'team_members_json' => $values['entry_type'] === 'team' ? json_encode($values['team_members'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) : null,
                 'full_name' => $values['full_name'],
                 'email' => $values['email'],
                 'mobile' => $values['mobile_normalized'],

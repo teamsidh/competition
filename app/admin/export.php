@@ -23,7 +23,7 @@ $term = admin_search_term($_POST['q'] ?? '');
 [$where, $params] = admin_search_filter($term);
 try {
     $query = $pdo->prepare(
-        'SELECT reference, full_name, email_normalized, mobile_e164, college_name, college_city,
+        'SELECT reference, entry_type, team_members_json, full_name, email_normalized, mobile_e164, college_name, college_city,
                 year_of_study, consented_at, created_at FROM registrations' . $where .
         ' ORDER BY created_at DESC, id DESC'
     );
@@ -43,8 +43,10 @@ if ($output === false) {
     exit('Export is temporarily unavailable.');
 }
 fwrite($output, "\xEF\xBB\xBF");
-fputcsv($output, ['Reference', 'Full name', 'Email', 'Mobile', 'College', 'College city', 'Year of study', 'Consented at UTC', 'Registered at UTC']);
-while ($row = $query->fetch(PDO::FETCH_NUM)) {
-    fputcsv($output, array_map('admin_csv_cell', $row));
+fputcsv($output, ['Reference', 'Entry type', 'Team members', 'Lead full name', 'Email', 'Mobile', 'College', 'College city', 'Year of study', 'Consented at UTC', 'Registered at UTC']);
+while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+    $members = json_decode((string) ($row['team_members_json'] ?? ''), true);
+    $row['team_members_json'] = is_array($members) ? implode('; ', $members) : '';
+    fputcsv($output, array_map('admin_csv_cell', array_values($row)));
 }
 fclose($output);

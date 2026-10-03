@@ -37,10 +37,11 @@ if (!is_string($reference) || !preg_match('/^DBAC-[A-F0-9]{16}$/', $reference)) 
         <h1 id="confirmation-title">Registration received</h1>
         <p>Your details have been saved. Keep this reference for your records.</p>
         <div class="reference-box"><span>YOUR REGISTRATION REFERENCE</span><strong><?= e($reference) ?></strong></div>
+        <p><?= ($_SESSION['confirmation_entry_type'] ?? 'solo') === 'team' ? 'Team registration' : 'Solo registration' ?><?php if (($_SESSION['confirmation_entry_type'] ?? '') === 'team' && !empty($_SESSION['confirmation_team_members'])): ?> · Teammates: <?= e(implode(', ', $_SESSION['confirmation_team_members'])) ?><?php endif; ?></p>
         <p class="confirmation-footnote">This confirmation is available in this browser session. Print or save it now for your records.</p>
         <div class="confirmation-actions">
           <button type="button" class="submit-button print-button" data-print><span>Print confirmation</span><span class="button-arrow" aria-hidden="true">↗</span></button>
-          <a href="<?= e(path_url($config, 'index.php')) ?>" class="text-link">Back to registration</a>
+          <a href="<?= e(path_url($config, 'index.php')) ?>" class="text-link">Back to competition</a>
         </div>
       </section>
     </main>

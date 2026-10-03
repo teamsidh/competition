@@ -3,6 +3,8 @@
 CREATE TABLE IF NOT EXISTS registrations (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     reference VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    entry_type VARCHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'solo',
+    team_members_json TEXT NULL,
     full_name VARCHAR(120) NOT NULL,
     email_normalized VARCHAR(254) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     mobile_e164 VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
@@ -15,6 +17,17 @@ CREATE TABLE IF NOT EXISTS registrations (
     UNIQUE KEY uq_registrations_reference (reference),
     UNIQUE KEY uq_registrations_email (email_normalized),
     KEY idx_registrations_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS sponsors (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name VARCHAR(120) NOT NULL,
+    logo_path VARCHAR(180) NOT NULL,
+    website_url VARCHAR(300) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_sponsors_order (sort_order, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- One owner account. Only a salted password hash is stored here.

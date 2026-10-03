@@ -112,7 +112,7 @@ if ($isSignedIn) {
         $requestedPage = filter_var($_GET['page'] ?? '1', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
         $page = min($requestedPage, $pageCount);
         $rowsQuery = $pdo->prepare(
-            'SELECT reference, full_name, email_normalized, mobile_e164, college_name, college_city,
+            'SELECT reference, entry_type, team_members_json, full_name, email_normalized, mobile_e164, college_name, college_city,
                     year_of_study, created_at FROM registrations' . $where .
             ' ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?'
         );
@@ -154,6 +154,7 @@ $pageTitle = $mode === 'setup' ? 'Set up admin access' : ($isSignedIn ? 'Registr
       <div class="topbar-right">
         <span class="workspace-label">Competition / Admin</span>
         <?php if ($isSignedIn): ?>
+          <a class="settings-link" href="<?= e(path_url($config, 'admin/sponsors.php')) ?>">Sponsors</a>
           <a class="settings-link" href="<?= e(path_url($config, 'admin/settings.php')) ?>">Settings</a>
           <form method="post" action="<?= e(path_url($config, 'admin/logout.php')) ?>">
             <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
@@ -235,12 +236,12 @@ $pageTitle = $mode === 'setup' ? 'Set up admin access' : ($isSignedIn ? 'Registr
           <div class="empty-state"><span class="empty-number">00</span><h3><?= $term === '' ? 'No registrations yet' : 'No matching registrations' ?></h3><p><?= $term === '' ? 'New submissions will appear here automatically.' : 'Try a different name, email, reference, or college.' ?></p></div>
         <?php else: ?>
           <div class="table-wrap"><table>
-            <thead><tr><th scope="col">Reference / received</th><th scope="col">Student</th><th scope="col">Contact</th><th scope="col">College</th><th scope="col">City</th><th scope="col">Year</th></tr></thead>
+            <thead><tr><th scope="col">Reference / received</th><th scope="col">Lead / team</th><th scope="col">Contact</th><th scope="col">College</th><th scope="col">City</th><th scope="col">Year</th></tr></thead>
             <tbody>
               <?php foreach ($rows as $row): ?>
                 <tr>
                   <td><strong class="reference"><?= e($row['reference']) ?></strong><small><?= e($row['created_at']) ?> UTC</small></td>
-                  <td><strong><?= e($row['full_name']) ?></strong></td>
+                  <td><strong><?= e($row['full_name']) ?></strong><small><?= $row['entry_type'] === 'team' ? 'Team' : 'Solo' ?></small><?php $members = json_decode((string) ($row['team_members_json'] ?? ''), true); if (is_array($members) && $members !== []): ?><small>With: <?= e(implode(', ', $members)) ?></small><?php endif; ?></td>
                   <td><a href="mailto:<?= e($row['email_normalized']) ?>"><?= e($row['email_normalized']) ?></a><small><?= e($row['mobile_e164']) ?></small></td>
                   <td><?= e($row['college_name']) ?></td>
                   <td><?= e($row['college_city']) ?></td>

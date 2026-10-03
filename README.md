@@ -1,8 +1,8 @@
 # DezignBank Architecture Student Competition registration
 
-A standalone PHP 8 registration flow for the **registration phase only**. It includes a responsive form, server-side validation, MySQL storage, a printable confirmation, and a private owner dashboard for viewing and exporting registrations. It does not include payments, uploads, teams, or judging.
+A standalone PHP 8 site for the **registration phase**. It includes a competition landing page, solo/team registration, server-side validation, MySQL storage, a printable confirmation, and a private owner dashboard for viewing and exporting registrations and managing sponsor logos. It does not include payments, design submissions, or judging workflows.
 
-The visual theme follows the live `dezignbank.net` brand: white surfaces, restrained terracotta (`#A65A3A`), Inter Tight/Plus Jakarta Sans typography, and the site's published logo mark. The heritage photograph shows Adalaj Stepwell in Gujarat. Photo: [Shivajidesai29 on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Adalaj_Stepwell-Adalaj_Ahmedabad-Gujarat-IMG_1021.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); cropped for the registration layout.
+The visual theme uses the DezignBank navy, white and orange palette. The hero includes a custom generated award/certificate image with a Zaha Hadid quote verified by the [Zaha Hadid Foundation](https://www.zhfoundation.com/collections/the-world-89-degrees/). Heritage photos: [Adalaj Stepwell by Shivajidesai29](https://commons.wikimedia.org/wiki/File:Adalaj_Stepwell-Adalaj_Ahmedabad-Gujarat-IMG_1021.jpg) and [Hawa Mahal by Aarshi Joshi](https://commons.wikimedia.org/wiki/File:Hawa_Mahal_at_Jaipur,_Rajasthan.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Jury portraits and professional details come from [Amity](https://www.amity.edu/faculty-detail.aspx?facultyID=3313), [Jamia Millia Islamia](https://jmi.ac.in/ACADEMICS/Departments/Department-Of-Architecture/Faculty-Members/2990/Mohammad_Ziauddin), and [Apeejay](https://www.apeejay.edu/architecture/directors-message/). No jury contact details are published.
 
 ## Folder structure
 
@@ -12,9 +12,11 @@ The visual theme follows the live `dezignbank.net` brand: white surfaces, restra
 ├── README.md
 ├── schema.sql                 # Fresh database setup; do not upload publicly
 ├── admin-migration.sql        # Add admin and recovery tables to an existing deployment
+├── competition-migration.sql  # Add team and sponsor data to existing deployment
 └── app/                       # Upload the contents of this folder to the site directory
     ├── .htaccess              # Blocks private files and directory listings
-    ├── index.php              # Registration page
+    ├── index.php              # Public competition landing page
+    ├── apply.php              # Solo/team registration form
     ├── register.php           # POST handler
     ├── confirmation.php       # Session-only printable confirmation
     ├── admin/                 # Private owner dashboard, settings, email recovery, CSV export
@@ -44,7 +46,7 @@ The visual theme follows the live `dezignbank.net` brand: white surfaces, restra
 4. Serve `app` as the document root with `php -S localhost:8000 -t app` and open `http://localhost:8000/`. The PHP development server does not apply `.htaccess`; use Apache for access-control checks.
 5. To use an Apache subdirectory such as `http://localhost/competition/`, put the contents of `app` in that directory and set `APP_URL` to `http://localhost`, `BASE_PATH` to `/competition`.
 
-`REGISTRATION_OPEN` in `config.php` controls whether the form accepts registrations. Set it to `false` to show the closed state and reject POSTs. Review the data-use notice in `app/index.php` against your final privacy policy. No marketing consent is included.
+`REGISTRATION_OPEN` in `config.php` controls whether the form accepts registrations. Set it to `false` to show the closed state and reject POSTs. Review the data-use notice in `app/apply.php` against your final privacy policy. No marketing consent is included. Landing page dates and rules are explicitly marked draft/tentative in `app/index.php`.
 
 ## GitHub
 
@@ -52,7 +54,7 @@ The visual theme follows the live `dezignbank.net` brand: white surfaces, restra
 
 ## InfinityFree deployment
 
-The live site is [dezignbank-competition.infinityfreeapp.com](https://dezignbank-competition.infinityfreeapp.com/), hosted in InfinityFree account `if0_43068035`. The production configuration is stored only in `/htdocs/private/config.php` on the host and is not in this repository. A live registration and database insert were verified on 2 October 2026; the synthetic test row was then deleted. For an existing installation, import `admin-migration.sql` in phpMyAdmin to add the admin and recovery tables without changing registrations.
+The live site is [competition.dezignbank.com](https://competition.dezignbank.com/) (also reachable through [the InfinityFree address](https://dezignbank-competition.infinityfreeapp.com/)), hosted in InfinityFree account `if0_43068035`. The production configuration is stored only in `/htdocs/private/config.php` on the host and is not in this repository. A live registration and database insert were verified on 2 October 2026; the synthetic test row was then deleted. On an existing installation, import `competition-migration.sql` **before** uploading the new PHP files. It adds entry type, teammate names, and sponsors. Import `admin-migration.sql` only if the admin tables are not already present.
 
 1. In the InfinityFree control panel, create a **new MySQL database** for this registration flow. Keep it separate from any DezignBank platform database. Copy the exact database hostname, database name, username, and password from the control panel. The hostname is usually an InfinityFree SQL host, **not** `localhost`.
 2. Open phpMyAdmin for that database and import `schema.sql`. Confirm the `registrations` table and its two unique indexes exist.
@@ -68,7 +70,7 @@ The desired `dezignbank.com/competition` URL in the brief requires compatible ro
 
 Open [the private admin section](https://dezignbank-competition.infinityfreeapp.com/admin/). The admin ID is `admin`. On the first visit, copy the PASSWORD field under Account Details in the InfinityFree hosting account (different from the InfinityFree dashboard login) and choose a separate admin password of at least 12 characters. Enter both directly on the HTTPS site; do not commit either password to Git. The existing password is checked once against the host-only configuration. Only a salted hash of the admin password is saved in `admin_auth`. Setup closes automatically after the first owner account is created.
 
-Sign in with that admin ID and password to view totals, search submissions, page through results, and download all or matching entries as CSV. The table shows each student's reference, received time, name, email, mobile, college, city, and year. CSV also includes consent time. Dashboard and export share a separate, private admin session that expires after 30 minutes of inactivity. Three wrong password attempts from one IP block sign-in for 15 minutes. Export uses POST and CSRF validation. CSV cells are guarded against spreadsheet formula injection. Sign out when finished, and keep downloaded contact data private.
+Sign in with that admin ID and password to view totals, search submissions, page through results, and download all or matching entries as CSV. The table shows each lead's reference, entry type, teammate names, received time, contact, college, city and year. CSV also includes consent time. The **Sponsors** link lets you add, replace, reorder and remove logos. PNG/JPEG/WebP only, 2 MB maximum; uploads are stored under `assets/sponsors/` with random filenames. Dashboard and export share a separate, private admin session that expires after 30 minutes of inactivity. Three wrong password attempts from one IP block sign-in for 15 minutes. Export uses POST and CSRF validation. CSV cells are guarded against spreadsheet formula injection. Sign out when finished, and keep downloaded contact data private.
 
 Use **Change admin password** and **Change admin ID** in admin settings to replace temporary credentials. To enable **Forgot password**, connect the `info@dezignbank.com` Hostinger mailbox from the same settings page by entering its mailbox password directly on the HTTPS site. The app sends a test message to that mailbox before saving the password encrypted with AES-256-GCM. The encryption key is derived from the host-only database password; the mailbox password is never put in Git. If the database password changes, reconnect the mailbox. Recovery then sends an eight-digit one-time code to `info@dezignbank.com` through Hostinger SMTP (`smtp.hostinger.com`, port 587, STARTTLS). Codes expire after 10 minutes, allow three incorrect entries, and are stored only as keyed hashes. Send requests are rate-limited. If the mailbox is not connected or SMTP fails, recovery clearly reports that and does not pretend an email was delivered. Manual reset of `admin_auth` in phpMyAdmin remains a fallback for the hosting owner.
 

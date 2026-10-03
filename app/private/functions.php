@@ -69,11 +69,34 @@ function normalize_phone(string $value): ?string
     return null;
 }
 
-/** @return array{0: array<string, string>, 1: array<string, string>} */
+/** @return array{0: array<string, mixed>, 1: array<string, string>} */
 function validate_registration(array $post): array
 {
     $errors = [];
     $values = [];
+
+    $values['entry_type'] = is_string($post['entry_type'] ?? null) ? $post['entry_type'] : '';
+    if (!in_array($values['entry_type'], ['solo', 'team'], true)) {
+        $errors['entry_type'] = 'Choose solo or team registration.';
+    }
+    $values['team_members'] = [];
+    if ($values['entry_type'] === 'team') {
+        $rawMembers = $post['team_members'] ?? null;
+        if (!is_array($rawMembers) || $rawMembers === []) {
+            $errors['team_members'] = 'Add at least one teammate name.';
+        } else {
+            foreach ($rawMembers as $rawMember) {
+                $name = is_string($rawMember) ? normalized_text($rawMember) : '';
+                $values['team_members'][] = $name;
+                if (character_count($name) < 2 || character_count($name) > 120 || preg_match('/[\p{C}]/u', $name)) {
+                    $errors['team_members'] = 'Each teammate name must be 2–120 characters.';
+                }
+            }
+            if (count(array_unique($values['team_members'])) !== count($values['team_members'])) {
+                $errors['team_members'] = 'Enter each teammate only once.';
+            }
+        }
+    }
 
     foreach (['full_name', 'college_name', 'college_city'] as $key) {
         $raw = $post[$key] ?? '';

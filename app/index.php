@@ -1,156 +1,60 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/private/bootstrap.php';
-
-$values = $_SESSION['form_values'] ?? [];
-$errors = $_SESSION['form_errors'] ?? [];
-$general = $_SESSION['form_general'] ?? null;
-unset($_SESSION['form_values'], $_SESSION['form_errors'], $_SESSION['form_general']);
+require_once __DIR__ . '/private/database.php';
+$sponsors = [];
+try {
+    $sponsors = database($config)->query('SELECT name, logo_path, website_url FROM sponsors ORDER BY sort_order, id')->fetchAll();
+} catch (Throwable $exception) {
+    error_log('Competition sponsors unavailable.');
+}
 $isOpen = ($config['REGISTRATION_OPEN'] ?? false) === true;
-$hasErrors = $general !== null || $errors !== [];
-
-function field_error(array $errors, string $key): string
-{
-    return isset($errors[$key]) ? '<span class="field-error" id="' . e($key) . '-error">' . e($errors[$key]) . '</span>' : '';
-}
-
-function field_attributes(array $errors, string $key): string
-{
-    return isset($errors[$key]) ? ' aria-invalid="true" aria-describedby="' . e($key) . '-error"' : '';
-}
 ?>
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#A65A3A">
-  <meta name="description" content="Register for the DezignBank Architecture Student Competition.">
+  <meta name="theme-color" content="#10263b">
+  <meta name="description" content="DezignBank Architecture Challenge 2026 — Noida & Greater Noida Edition. Explore the competition, meet the jury and register solo or with a team.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="canonical" href="<?= e(canonical_url($config, 'index.php')) ?>">
-  <link rel="stylesheet" href="<?= e(path_url($config, 'assets/style.css')) ?>?v=20261002-redesign">
-  <script src="<?= e(path_url($config, 'assets/form.js')) ?>" defer></script>
-  <title>Architecture Student Competition — Registration | DezignBank</title>
+  <link rel="stylesheet" href="<?= e(path_url($config, 'assets/style.css')) ?>?v=20261003">
+  <script src="<?= e(path_url($config, 'assets/site.js')) ?>" defer></script>
+  <title>DezignBank Architecture Challenge 2026</title>
 </head>
-<body>
-  <a class="skip-link" href="#registration">Skip to registration</a>
-  <div class="site-shell">
-    <header class="site-header">
-      <a class="brand" href="<?= e(path_url($config, 'index.php')) ?>" aria-label="DezignBank competition registration home">
-        <img class="brand-mark" src="<?= e(path_url($config, 'assets/dezignbank-mark.svg')) ?>" alt="" width="31" height="31">
-        <span class="brand-name">DezignBank</span>
-      </a>
-      <span class="header-label">Architecture Student Competition</span>
-    </header>
-
-    <main class="main-grid" id="registration">
-      <section class="story-panel" aria-labelledby="story-title">
-        <div class="story-copy">
-          <p class="eyebrow">DezignBank / Student competition</p>
-          <h1 id="story-title">Architecture Student Competition <span>— Registration</span></h1>
-          <p>Register with your contact and college details. We’ll use them to manage your registration and send competition-related updates.</p>
+<body class="home-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="home-header">
+    <a class="home-brand" href="#top" aria-label="DezignBank competition home"><img src="<?= e(path_url($config, 'assets/dezignbank-mark.svg')) ?>" alt="" width="36" height="36"><span>DezignBank<small>CREATE &nbsp;|&nbsp; SHARE &nbsp;|&nbsp; GROW</small></span></a>
+    <nav class="home-nav" aria-label="Main navigation"><a href="#about">Overview</a><a href="#rules">Rules</a><a href="#dates">Dates</a><a href="#jury">Jury</a><a href="#sponsors">Sponsors</a></nav>
+    <a class="nav-register" href="<?= e(path_url($config, 'apply.php')) ?>">Register now <span aria-hidden="true">↗</span></a>
+  </header>
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <div><p class="home-kicker"><span class="orange-line"></span> STUDENT DESIGN COMPETITION &nbsp; / &nbsp; 2026</p><h1 id="hero-title">Design the<br><em>next story.</em></h1></div>
+        <div class="hero-side"><p>DezignBank Architecture Challenge</p><strong>Noida & Greater Noida Edition</strong><span>A platform for emerging architects to put their ideas forward.</span><a class="hero-register" href="<?= e(path_url($config, 'apply.php')) ?>"><?= $isOpen ? 'Register your entry' : 'Registration closed' ?> <span aria-hidden="true">↗</span></a></div>
+      </div>
+      <div class="carousel" aria-label="Architecture challenge imagery">
+        <div class="carousel-stage">
+          <figure class="carousel-slide is-active"><img src="<?= e(path_url($config, 'assets/award-certificate-quote.png')) ?>" alt="Architectural trophy and designed competition certificate beside a Zaha Hadid quotation: There are 360 degrees, so why stick to one?" fetchpriority="high"><figcaption><span>01 / 03</span> The ideas that shape tomorrow</figcaption></figure>
+          <figure class="carousel-slide"><img src="<?= e(path_url($config, 'assets/adalaj-stepwell.jpg')) ?>" alt="Carved stone architecture of Adalaj Stepwell, Gujarat" loading="lazy"><figcaption><span>02 / 03</span> Heritage is an invitation to reimagine</figcaption></figure>
+          <figure class="carousel-slide"><img src="<?= e(path_url($config, 'assets/hawa-mahal.jpg')) ?>" alt="The historic facade of Hawa Mahal in Jaipur, Rajasthan" loading="lazy"><figcaption><span>03 / 03</span> Great design stands across generations</figcaption></figure>
         </div>
-        <figure class="heritage-art">
-          <img src="<?= e(path_url($config, 'assets/adalaj-stepwell.jpg')) ?>" alt="Carved stone columns and galleries at Adalaj Stepwell in Gujarat" width="960" height="1158">
-          <figcaption>Adalaj Stepwell, Gujarat · Photograph by <a href="https://commons.wikimedia.org/wiki/File:Adalaj_Stepwell-Adalaj_Ahmedabad-Gujarat-IMG_1021.jpg" rel="noopener noreferrer" target="_blank">Shivajidesai29</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener noreferrer" target="_blank">CC BY-SA 4.0</a>. Cropped for this layout.</figcaption>
-        </figure>
-      </section>
-
-      <section class="form-panel" aria-labelledby="form-title">
-        <div class="form-intro">
-          <p class="eyebrow">Registration form</p>
-          <h2 id="form-title">Your details</h2>
-          <p>Fields marked <span class="required-mark">*</span> are required.</p>
-        </div>
-
-        <?php if (!$isOpen): ?>
-          <div class="closed-notice" role="status">
-            <h3>Registration is currently closed</h3>
-            <p>Please check back for updates from DezignBank.</p>
-          </div>
-        <?php else: ?>
-          <?php if ($hasErrors): ?>
-            <div class="error-summary" id="error-summary" role="alert" tabindex="-1">
-              <strong>We couldn’t submit your registration.</strong>
-              <?php if ($general !== null): ?><p><?= e($general) ?></p><?php endif; ?>
-              <?php if ($errors !== []): ?>
-                <ul>
-                  <?php foreach ($errors as $key => $message): ?>
-                    <li><a href="#<?= e($key) ?>"><?= e($message) ?></a></li>
-                  <?php endforeach; ?>
-                </ul>
-              <?php endif; ?>
-            </div>
-          <?php endif; ?>
-
-          <form method="post" action="<?= e(path_url($config, 'register.php')) ?>" id="registration-form" novalidate>
-            <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
-            <div class="honeypot" aria-hidden="true">
-              <label for="website">Website</label>
-              <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
-            </div>
-
-            <div class="form-section-title"><h3>Personal details</h3></div>
-            <div class="field-grid">
-              <div class="field field-full">
-                <label for="full_name">Full name <span class="required-mark" aria-hidden="true">*</span></label>
-                <input id="full_name" name="full_name" type="text" value="<?= e($values['full_name'] ?? '') ?>" autocomplete="name" minlength="2" maxlength="120" required<?= field_attributes($errors, 'full_name') ?> placeholder="Your full name">
-                <?= field_error($errors, 'full_name') ?>
-              </div>
-              <div class="field">
-                <label for="email">Email address <span class="required-mark" aria-hidden="true">*</span></label>
-                <input id="email" name="email" type="email" value="<?= e($values['email'] ?? '') ?>" autocomplete="email" maxlength="254" required<?= field_attributes($errors, 'email') ?> placeholder="you@example.com">
-                <?= field_error($errors, 'email') ?>
-              </div>
-              <div class="field">
-                <label for="mobile">WhatsApp / mobile number <span class="required-mark" aria-hidden="true">*</span></label>
-                <input id="mobile" name="mobile" type="tel" value="<?= e($values['mobile'] ?? '') ?>" autocomplete="tel" inputmode="tel" maxlength="24" required<?= field_attributes($errors, 'mobile') ?> placeholder="+91 98765 43210">
-                <?= field_error($errors, 'mobile') ?>
-              </div>
-            </div>
-
-            <div class="form-section-title second"><h3>Academic details</h3></div>
-            <div class="field-grid">
-              <div class="field field-full">
-                <label for="college_name">College / institution name <span class="required-mark" aria-hidden="true">*</span></label>
-                <input id="college_name" name="college_name" type="text" value="<?= e($values['college_name'] ?? '') ?>" autocomplete="organization" minlength="2" maxlength="160" required<?= field_attributes($errors, 'college_name') ?> placeholder="Name of your college or institution">
-                <?= field_error($errors, 'college_name') ?>
-              </div>
-              <div class="field">
-                <label for="college_city">College city <span class="required-mark" aria-hidden="true">*</span></label>
-                <input id="college_city" name="college_city" type="text" value="<?= e($values['college_city'] ?? '') ?>" autocomplete="address-level2" minlength="2" maxlength="100" required<?= field_attributes($errors, 'college_city') ?> placeholder="City">
-                <?= field_error($errors, 'college_city') ?>
-              </div>
-              <div class="field">
-                <label for="year_of_study">Year of study <span class="required-mark" aria-hidden="true">*</span></label>
-                <select id="year_of_study" name="year_of_study" required<?= field_attributes($errors, 'year_of_study') ?>>
-                  <option value="">Select your year</option>
-                  <?php foreach (['1' => '1st year', '2' => '2nd year', '3' => '3rd year', '4' => '4th year', '5' => '5th year'] as $value => $label): ?>
-                    <option value="<?= $value ?>"<?= ($values['year_of_study'] ?? '') === $value ? ' selected' : '' ?>><?= e($label) ?></option>
-                  <?php endforeach; ?>
-                </select>
-                <?= field_error($errors, 'year_of_study') ?>
-              </div>
-            </div>
-
-            <div class="consent-block">
-              <label class="checkbox-label" for="consent">
-                <input id="consent" name="consent" type="checkbox" value="1" required<?= ($values['consent'] ?? '') === '1' ? ' checked' : '' ?><?= field_attributes($errors, 'consent') ?>>
-                <span>I agree to the use of my details to manage my registration and send competition-related updates. <span class="required-mark" aria-hidden="true">*</span></span>
-              </label>
-              <?= field_error($errors, 'consent') ?>
-              <p class="data-notice">Data use: Your name, contact details, college and year of study are collected for registration and competition-related communication.</p>
-            </div>
-
-            <button class="submit-button" type="submit"><span>Submit registration</span><span class="button-arrow" aria-hidden="true">↗</span></button>
-            <p class="submit-note">A registration reference will appear after your details are saved.</p>
-          </form>
-        <?php endif; ?>
-      </section>
-    </main>
-    <footer class="site-footer"><span>© <?= date('Y') ?> DezignBank</span><span>Architecture Student Competition</span></footer>
-  </div>
+        <div class="carousel-controls"><div class="carousel-dots" aria-label="Choose slide"><button type="button" class="is-active" aria-label="Show award slide" aria-current="true"></button><button type="button" aria-label="Show Adalaj Stepwell slide"></button><button type="button" aria-label="Show Hawa Mahal slide"></button></div><div class="carousel-arrows"><button type="button" data-direction="prev" aria-label="Previous slide">←</button><button type="button" data-direction="next" aria-label="Next slide">→</button></div></div>
+      </div>
+      <div class="hero-bottom"><span>OPEN TO ARCHITECTURE STUDENTS</span><span>SOLO & TEAM ENTRIES</span><span>SCROLL TO EXPLORE ↓</span></div>
+    </section>
+    <section class="overview section-pad" id="about"><div class="section-heading"><p class="home-kicker">01 / THE CHALLENGE</p><h2>Architecture begins<br><em>with a question.</em></h2></div><div class="overview-copy"><p>What can the next generation of designers contribute to the places we share? Bring your perspective, your curiosity and the courage to explore a different answer.</p><p>This edition brings students from Noida, Greater Noida and beyond into a conversation about architecture, heritage and what comes next.</p><a class="inline-link" href="<?= e(path_url($config, 'apply.php')) ?>">Join the challenge <span aria-hidden="true">↗</span></a></div></section>
+    <section class="rules-section section-pad" id="rules"><div class="section-top"><p class="home-kicker">02 / PARTICIPATION</p><h2>How to take part<span class="accent-dot">.</span></h2><p class="section-note">Draft rules · We’ll update these before the final competition brief.</p></div><div class="rule-grid"><article><span>01</span><h3>Solo or together</h3><p>Enter on your own or register a team. One person should be the lead participant and contact for the team.</p></article><article><span>02</span><h3>Students first</h3><p>The challenge is intended for current architecture students. Keep your college and year of study details accurate.</p></article><article><span>03</span><h3>Original ideas</h3><p>Submit work created by you and your named teammates. Credit sources and collaborators wherever they are used.</p></article><article><span>04</span><h3>One clear entry</h3><p>Use one registration per lead email. Later design submission requirements will be shared with registered participants.</p></article></div><p class="rules-fine">The final brief may refine eligibility, team requirements, deliverables and judging criteria. Jury decisions on submitted work will be final.</p></section>
+    <section class="dates-section section-pad" id="dates"><div class="section-top"><p class="home-kicker">03 / KEY DATES</p><h2>Mark the journey<span class="accent-dot">.</span></h2><p class="section-note">Illustrative dates only. The confirmed schedule will be announced later.</p></div><div class="date-list"><div><span>01</span><strong>Registration opens</strong><time datetime="2026-10-01">01 Oct 2026</time></div><div><span>02</span><strong>Registration closes</strong><time datetime="2026-10-31">31 Oct 2026</time></div><div><span>03</span><strong>Competition brief</strong><time datetime="2026-11-05">05 Nov 2026</time></div><div><span>04</span><strong>Design submission</strong><time datetime="2026-12-15">15 Dec 2026</time></div></div></section>
+    <section class="jury-section section-pad" id="jury"><div class="section-top"><p class="home-kicker">04 / THE JURY</p><h2>Meet the minds<br><em>behind the review.</em></h2><p class="section-note">Experienced voices from architecture education.</p></div><div class="jury-grid"><article class="jury-card"><div class="jury-image"><img src="<?= e(path_url($config, 'assets/jury-devendra.jpg')) ?>" alt="Prof. (Dr.) Devendra Pratap Singh" loading="lazy"></div><div class="jury-copy"><span>01 / JURY MEMBER</span><h3>Prof. (Dr.) Devendra<br>Pratap Singh</h3><p>Dean · Amity School of Architecture & Planning</p><small>Amity University, Noida</small></div></article><article class="jury-card"><div class="jury-image"><img src="<?= e(path_url($config, 'assets/jury-ziauddin.jpg')) ?>" alt="Ar. Mohammad Ziauddin" loading="lazy"></div><div class="jury-copy"><span>02 / JURY MEMBER</span><h3>Ar. Mohammad<br>Ziauddin</h3><p>Associate Professor · Department of Architecture</p><small>Jamia Millia Islamia, New Delhi</small></div></article><article class="jury-card"><div class="jury-image"><img src="<?= e(path_url($config, 'assets/jury-anand.webp')) ?>" alt="Prof. Anand Khatri" loading="lazy"></div><div class="jury-copy"><span>03 / JURY MEMBER</span><h3>Prof. Anand<br>Khatri</h3><p>Director · School of Architecture & Planning</p><small>Apeejay Institute of Technology, Greater Noida</small></div></article></div></section>
+    <section class="sponsors-section section-pad" id="sponsors"><div class="section-top"><p class="home-kicker">05 / OUR PARTNERS</p><h2>Supported by<span class="accent-dot">.</span></h2></div><?php if ($sponsors === []): ?><p class="sponsor-empty">Our partners will be announced here soon.</p><?php else: ?><div class="sponsor-grid"><?php foreach ($sponsors as $sponsor): ?><div class="sponsor-card"><?php if ($sponsor['website_url']): ?><a href="<?= e($sponsor['website_url']) ?>" target="_blank" rel="noopener noreferrer" aria-label="Visit <?= e($sponsor['name']) ?>"><?php endif; ?><img src="<?= e(path_url($config, $sponsor['logo_path'])) ?>" alt="<?= e($sponsor['name']) ?> logo" loading="lazy"><?php if ($sponsor['website_url']): ?></a><?php endif; ?><span><?= e($sponsor['name']) ?></span></div><?php endforeach; ?></div><?php endif; ?></section>
+    <section class="closing-cta"><p class="home-kicker">YOUR NEXT CHAPTER STARTS HERE</p><h2>Have an idea worth<br><em>putting forward?</em></h2><a href="<?= e(path_url($config, 'apply.php')) ?>">Register for the challenge <span aria-hidden="true">↗</span></a></section>
+  </main>
+  <footer class="home-footer"><div><strong>DezignBank</strong><span>CREATE &nbsp;|&nbsp; SHARE &nbsp;|&nbsp; GROW</span></div><p>© <?= date('Y') ?> DezignBank · Architecture Challenge</p><div class="footer-credits">Photos: <a href="https://commons.wikimedia.org/wiki/File:Adalaj_Stepwell-Adalaj_Ahmedabad-Gujarat-IMG_1021.jpg">Adalaj · Shivajidesai29</a> and <a href="https://commons.wikimedia.org/wiki/File:Hawa_Mahal_at_Jaipur,_Rajasthan.jpg">Hawa Mahal · Aarshi Joshi</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Jury portraits: <a href="https://www.amity.edu/faculty-detail.aspx?facultyID=3313">Amity</a>, <a href="https://jmi.ac.in/ACADEMICS/Departments/Department-Of-Architecture/Faculty-Members/2990/Mohammad_Ziauddin">JMI</a>, <a href="https://www.apeejay.edu/architecture/directors-message/">Apeejay</a>. <a href="https://www.zhfoundation.com/collections/the-world-89-degrees/">Quote source</a>.</div></footer>
 </body>
 </html>
