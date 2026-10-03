@@ -64,7 +64,7 @@ The live site is [competition.dezignbank.com](https://competition.dezignbank.com
 6. Check that `https://your-host/private/config.example.php` returns **403**, directory listing is unavailable, and no SQL, log, backup, or repository metadata is accessible. If `.htaccess` is not honored, do not open registration until private files are outside the web root or access is blocked by the host.
 7. Set `REGISTRATION_OPEN` to `true` only after a live test registration succeeds. Remove that test record in phpMyAdmin if appropriate, then test duplicate email behavior.
 
-The desired `dezignbank.com/competition` URL in the brief requires compatible routing on the existing `dezignbank.com` host (a real directory or a correctly configured reverse proxy) and must be tested with InfinityFree's browser checks. DNS alone cannot route `/competition` to a different host. `competition.dezignbank.com` is the fallback deployment address. A redirect from `/competition` to the subdomain changes the browser URL. Use the `.net` visual theme independently of whichever approved domain serves this app.
+`competition.dezignbank.com` is the dedicated competition host. The main `dezignbank.com` site and its database remain separate. A `dezignbank.com/competition` path would require routing on the main site's host; DNS alone cannot route a path to InfinityFree.
 
 ## Admin dashboard
 

@@ -156,7 +156,7 @@ function field_attributes(array $errors, string $key): string
             <div class="consent-block">
               <label class="checkbox-label" for="consent">
                 <input id="consent" name="consent" type="checkbox" value="1" required<?= ($values['consent'] ?? '') === '1' ? ' checked' : '' ?><?= field_attributes($errors, 'consent') ?>>
-                <span>I agree to the use of my details and my teammates’ names to manage this registration and send competition updates to the lead participant. <span class="required-mark" aria-hidden="true">*</span></span>
+                <span>I agree to the use of my details for this registration and confirm any teammates have agreed to be named. Competition updates will go to the lead participant. <span class="required-mark" aria-hidden="true">*</span></span>
               </label>
               <?= field_error($errors, 'consent') ?>
               <p class="data-notice">Data use: We collect the lead’s contact and college details and any teammate names for registration. Only the lead’s contact receives updates.</p>
